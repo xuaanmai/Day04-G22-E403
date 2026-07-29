@@ -77,6 +77,24 @@ class GeminiProvider:
     ) -> None:
         self.api_key_env = api_key_env
         self.default_model = default_model
+        self._key_index = 0
+
+    def _api_keys(self) -> list[str]:
+        values: list[str] = []
+        primary = os.getenv(self.api_key_env, "").strip()
+        if primary:
+            values.append(primary)
+        combined = os.getenv(f"{self.api_key_env}S", "")
+        values.extend(value.strip() for value in combined.replace("\n", ",").split(",") if value.strip())
+        suffix = 1
+        while True:
+            value = os.getenv(f"{self.api_key_env}_{suffix}")
+            if value is None:
+                break
+            if value.strip():
+                values.append(value.strip())
+            suffix += 1
+        return list(dict.fromkeys(values))
 
     def complete(
         self,
@@ -93,9 +111,12 @@ class GeminiProvider:
         except ImportError as exc:
             raise RuntimeError("Install live provider dependency first: pip install google-genai") from exc
 
-        api_key = os.getenv(self.api_key_env)
-        if not api_key:
-            raise RuntimeError(f"Missing API key env var: {self.api_key_env}")
+        api_keys = self._api_keys()
+        if not api_keys:
+            raise RuntimeError(
+                f"Missing API key env vars: {self.api_key_env}, "
+                f"{self.api_key_env}S, or {self.api_key_env}_1..."
+            )
 
         system_instruction, contents = _to_gemini_contents(messages)
         declarations = _to_gemini_declarations(tools)
@@ -105,12 +126,27 @@ class GeminiProvider:
         if declarations:
             config_kwargs["tools"] = [types.Tool(function_declarations=declarations)]
 
-        client = genai.Client(api_key=api_key)
-        resp = client.models.generate_content(
-            model=model or self.default_model,
-            contents=contents,
-            config=types.GenerateContentConfig(**config_kwargs),
-        )
+        last_error: Exception | None = None
+        resp = None
+        for offset in range(len(api_keys)):
+            index = (self._key_index + offset) % len(api_keys)
+            client = genai.Client(api_key=api_keys[index])
+            try:
+                resp = client.models.generate_content(
+                    model=model or self.default_model,
+                    contents=contents,
+                    config=types.GenerateContentConfig(**config_kwargs),
+                )
+                self._key_index = (index + 1) % len(api_keys)
+                break
+            except Exception as exc:
+                last_error = exc
+                message = str(exc)
+                quota_error = "429" in message or "RESOURCE_EXHAUSTED" in message
+                if not quota_error or offset == len(api_keys) - 1:
+                    raise
+        if resp is None:
+            raise RuntimeError("All configured Gemini API keys failed") from last_error
 
         text_parts: list[str] = []
         calls: list[ToolCall] = []

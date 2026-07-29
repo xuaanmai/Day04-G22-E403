@@ -34,26 +34,26 @@ Các lệnh bên dưới dùng tên tool ban đầu trong starter. Nếu nhóm �
 
 ## 2. Model provider
 
-Khuyến nghị OpenRouter:
+Provider đang sử dụng: Gemini.
 
 ```bash
-OPENROUTER_API_KEY=...
-```
-
-Hoặc chọn một provider khác:
-
-```bash
-OPENAI_API_KEY=...
-ANTHROPIC_API_KEY=...
 GEMINI_API_KEY=...
 ```
 
-Nếu chọn provider khác, thay `--provider openrouter` bằng provider đó trong **tất cả** lệnh `preflight_provider.py`, `run_eval.py` và `chat.py`.
+Các provider khác mà starter vẫn hỗ trợ:
+
+```bash
+OPENROUTER_API_KEY=...
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
+```
+
+Các lệnh `preflight_provider.py`, `run_eval.py` và `chat.py` trong bài dùng thống nhất `--provider gemini`.
 
 Preflight:
 
 ```bash
-python scripts/preflight_provider.py --provider openrouter
+python scripts/preflight_provider.py --provider gemini
 ```
 
 Preflight chỉ kiểm tra model provider có trả structured tool call. Nó không kiểm tra Tavily, Firecrawl, RapidAPI, arXiv hoặc Telegram; dùng các smoke test bên dưới cho từng tool API.

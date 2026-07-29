@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -270,6 +271,8 @@ def main() -> None:
     parser.add_argument("--tools", type=Path, default=ARTIFACTS_DIR / "tools.yaml")
     parser.add_argument("--eval-cases", type=Path, default=DATA_DIR / "eval_base.json")
     parser.add_argument("--runs-dir", type=Path, default=ROOT / "runs")
+    parser.add_argument("--request-delay", type=float, default=13.0, help="Seconds between provider requests; 13s stays below a 5 RPM free-tier limit.")
+    parser.add_argument("--provider-retries", type=int, default=3, help="Retry transient 429/503 provider errors.")
     args = parser.parse_args()
 
     system_prompt = args.system_prompt.read_text(encoding="utf-8")
@@ -286,29 +289,41 @@ def main() -> None:
     openai_tools = to_openai_tools(tool_declarations)
 
     results: list[dict[str, Any]] = []
-    for case in cases:
+    for case_index, case in enumerate(cases):
+        if case_index and args.request_delay > 0:
+            time.sleep(args.request_delay)
         print(f"Running {case['id']}...", flush=True)
         agent = ResearchAgent(provider, system_prompt=system_prompt, tools=openai_tools, model=args.model)
-        try:
-            tool_choice = None if case["expect"].get("no_tool") else "required"
-            run = agent.run(case_messages(case), tool_choice=tool_choice)
-            calls = [{"name": call.name, "args": call.args} for call in run.tool_calls]
-            result = evaluate_phase_b(case, calls, run.text)
-            tool_results = run.tool_results
-        except Exception as exc:
-            calls = []
-            tool_results = []
-            result = {
-                "passed": False,
-                "failure_type": "provider_error",
-                "case_failure_type": case.get("failure_type"),
-                "observed_mismatch": "provider_error",
-                "failures": [f"{type(exc).__name__}: {str(exc)}"],
-                "actual_tool_calls": [],
-                "actual_text": None,
-                "routing_correct": False,
-                "args_correct": False,
-            }
+        for attempt in range(args.provider_retries + 1):
+            try:
+                tool_choice = None if case["expect"].get("no_tool") else "required"
+                run = agent.run(case_messages(case), tool_choice=tool_choice)
+                calls = [{"name": call.name, "args": call.args} for call in run.tool_calls]
+                result = evaluate_phase_b(case, calls, run.text)
+                tool_results = run.tool_results
+                break
+            except Exception as exc:
+                error_text = f"{type(exc).__name__}: {str(exc)}"
+                transient = any(marker in error_text for marker in ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE"))
+                if transient and attempt < args.provider_retries:
+                    retry_delay = max(args.request_delay, 15.0) * (attempt + 1)
+                    print(f"Transient provider error; retry {attempt + 1}/{args.provider_retries} in {retry_delay:.0f}s...", flush=True)
+                    time.sleep(retry_delay)
+                    continue
+                calls = []
+                tool_results = []
+                result = {
+                    "passed": False,
+                    "failure_type": "provider_error",
+                    "case_failure_type": case.get("failure_type"),
+                    "observed_mismatch": "provider_error",
+                    "failures": [error_text],
+                    "actual_tool_calls": [],
+                    "actual_text": None,
+                    "routing_correct": False,
+                    "args_correct": False,
+                }
+                break
         results.append({
             "id": case["id"],
             "phase": case["phase"],

@@ -1,0 +1,24 @@
+{
+  "transcript_id": "v3_gemini_ui_20260729T115849682257",
+  "version": "v3",
+  "artifact_version": "v3+p963560126cec+t30c233c2a07b",
+  "prompt_hash": "963560126cec4b38e25ccba5e1224773a30863daec7a1ba1807239a904d6aaba",
+  "tools_hash": "30c233c2a07b1492622ec1f93157e5764f29918516e3057fdc575afb89cb412e",
+  "provider": "gemini",
+  "model": "gemini-3.5-flash",
+  "created_at": "2026-07-29T11:58:49",
+  "updated_at": "2026-07-29T11:59:33",
+  "turns": [
+    {
+      "turn_index": 1,
+      "started_at": "2026-07-29T11:59:26",
+      "user": "cho tôi số liệu về bệnh ung thư vú ở việt nam",
+      "status": "provider_error",
+      "assistant_text": "Gemini API gặp lỗi. Xem chi tiết trong tool trace.",
+      "error": "ConnectError: [WinError 10013] An attempt was made to access a socket in a way forbidden by its access permissions",
+      "rounds": [],
+      "tool_events": [],
+      "ended_at": "2026-07-29T11:59:33"
+    }
+  ]
+}
