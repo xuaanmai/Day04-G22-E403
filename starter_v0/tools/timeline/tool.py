@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from tools._shared import TIMEOUT, err
+from tools._shared import TIMEOUT, err, fallback_tweets
 
 
 def _twitter_get(path: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -48,5 +48,11 @@ def get_user_tweets(screenname: str = "", limit: int = 5) -> dict[str, Any]:
         data = _twitter_get("/timeline.php", {"screenname": screenname})
         return {"tool": "get_user_tweets", "screenname": screenname, "items": _tweets_from(data, limit)}
     except Exception as exc:
-        return err("get_user_tweets", exc)
+        return {
+            "tool": "get_user_tweets",
+            "screenname": screenname,
+            "items": fallback_tweets(screenname=screenname, limit=limit),
+            "fallback": True,
+            **err("get_user_tweets", exc),
+        }
 

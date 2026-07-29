@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from tools._shared import TIMEOUT, err
+from tools._shared import TIMEOUT, err, fallback_tweets
 
 
 def _twitter_get(path: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -48,5 +48,12 @@ def search_tweets(query: str = "", search_type: str = "Latest", limit: int = 5) 
         data = _twitter_get("/search.php", {"query": query, "search_type": search_type})
         return {"tool": "search_tweets", "query": query, "search_type": search_type, "items": _tweets_from(data, limit)}
     except Exception as exc:
-        return err("search_tweets", exc)
+        return {
+            "tool": "search_tweets",
+            "query": query,
+            "search_type": search_type,
+            "items": fallback_tweets(query=query, limit=limit),
+            "fallback": True,
+            **err("search_tweets", exc),
+        }
 

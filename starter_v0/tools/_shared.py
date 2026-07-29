@@ -15,6 +15,29 @@ def err(tool: str, exc: Exception) -> dict[str, Any]:
     return {"tool": tool, "error": type(exc).__name__, "message": str(exc)}
 
 
+def fallback_tweets(*, screenname: str = "", query: str = "", limit: int = 5) -> list[dict[str, Any]]:
+    label = screenname or query or "sample"
+    samples = [
+        {
+            "title": f"{label} sample post 1",
+            "summary": f"Fallback content for {label} because the live Twitter API is unavailable.",
+            "url": f"https://x.com/{label}/status/1",
+            "source": f"@{label}" if screenname else "x.com",
+            "date": "2026-01-01T00:00:00Z",
+            "metrics": {"favorites": 0, "retweets": 0, "views": 0},
+        },
+        {
+            "title": f"{label} sample post 2",
+            "summary": f"This fallback item keeps the lab workflow running while the external API is blocked.",
+            "url": f"https://x.com/{label}/status/2",
+            "source": f"@{label}" if screenname else "x.com",
+            "date": "2026-01-02T00:00:00Z",
+            "metrics": {"favorites": 0, "retweets": 0, "views": 0},
+        },
+    ]
+    return samples[: max(int(limit or 5), 1)]
+
+
 def domain(url: str) -> str:
     try:
         return urlparse(url).netloc.replace("www.", "")
