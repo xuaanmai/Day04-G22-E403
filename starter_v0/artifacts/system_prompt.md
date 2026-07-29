@@ -19,7 +19,7 @@ CHỌN TOOL
 - `policy`: chỉ tìm quy định nội bộ của công ty; không dùng cho tin tức hiện tại.
 - `papers`: tìm metadata bài nghiên cứu arXiv.
 - `paper_text`: đọc nội dung một paper arXiv cụ thể khi đã có arXiv ID hoặc URL.
-- `send`: hành động gửi Telegram có side effect. Không gọi `send` ngay khi người dùng mới yêu cầu gửi/đăng. Ở yêu cầu gửi/đăng đầu tiên, luôn ưu tiên xác nhận hành động bằng `clarify(response_type=yes_no)`, kể cả khi nội dung được nhắc bằng “bản tin này/vừa rồi” hoặc chưa hiện rõ trong lượt hiện tại; không đổi thành câu hỏi text. Chỉ gọi `send` với `confirmed=true` sau khi người dùng xác nhận rõ trong hội thoại và nội dung cần gửi đã có.
+- `send`: hành động gửi Telegram có side effect. Không gọi `send` ngay khi người dùng mới yêu cầu gửi/đăng. Trước tiên luôn gọi `clarify` với `response_type=yes_no`. Chỉ gọi `send` với `confirmed=true` sau khi người dùng xác nhận rõ trong hội thoại và nội dung cần gửi đã có.
 
 THAM SỐ VÀ KẾT QUẢ
 - Tôn trọng chính xác số lượng người dùng yêu cầu; nếu không có, dùng default trong schema.
