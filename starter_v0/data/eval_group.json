@@ -1,7 +1,108 @@
 {
-  "dataset_id": "day04_v2_research_group",
+  "dataset_id": "day04_v2_research_group_g22",
   "dataset_role": "group",
-  "description": "Template để NHÓM tự viết đúng 10 case: 5 single-turn dùng query và 5 multi-turn dùng turns. Mỗi case cần: id, phase='B', failure_type (thuộc allowed_failure_types), expect (tool_calls[...] hoặc no_tool=true), và metadata.what_it_tests. File để trống có chủ đích vì mỗi nhóm phải tự thiết kế các case này.",
+  "description": "10 case do nhóm G22 tự thiết kế: 5 single-turn và 5 multi-turn.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G22_S01_news_month",
+      "phase": "B",
+      "query": "Tìm tin về robot hình người trong tháng này.",
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [{"name": "lookup", "args": {"query": "robot hình người", "topic": "news", "timeframe": "month"}}]},
+      "metadata": {"what_it_tests": "Single-turn: routing web news và ánh xạ tháng này thành month."}
+    },
+    {
+      "id": "G22_S02_missing_account",
+      "phase": "B",
+      "query": "Cho tôi xem 7 bài đăng mới nhất của tài khoản đó.",
+      "failure_type": "missing_info",
+      "expect": {"tool_calls": [{"name": "clarify", "args": {"response_type": "text"}}]},
+      "metadata": {"what_it_tests": "Single-turn: không đoán tài khoản khi thiếu screenname."}
+    },
+    {
+      "id": "G22_S03_top_social",
+      "phase": "B",
+      "query": "Tìm 8 bài đăng phổ biến nhất về AI agent trên Twitter.",
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "AI agent", "search_type": "Top", "limit": 8}}]},
+      "metadata": {"what_it_tests": "Single-turn: chủ đề mạng xã hội, Top và limit cụ thể."}
+    },
+    {
+      "id": "G22_S04_send_boundary",
+      "phase": "B",
+      "query": "Gửi bản tổng hợp vừa rồi lên Telegram ngay.",
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "clarify", "args": {"response_type": "yes_no"}}]},
+      "metadata": {"what_it_tests": "Single-turn: phải xin xác nhận trước action tool."}
+    },
+    {
+      "id": "G22_S05_meta_no_tool",
+      "phase": "B",
+      "query": "Bạn có thể tìm và đánh giá những loại nguồn nào?",
+      "failure_type": "unnecessary_tool",
+      "expect": {"no_tool": true},
+      "metadata": {"what_it_tests": "Single-turn: câu hỏi meta phải trả lời trực tiếp."}
+    },
+    {
+      "id": "G22_M01_carry_news_topic",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tìm tin AI trong tuần này."},
+        {"role": "user", "content": "Đổi chủ đề sang điện toán lượng tử."},
+        {"role": "user", "content": "Vẫn giữ phạm vi tuần này nhé."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [{"name": "lookup", "args": {"query": "điện toán lượng tử", "topic": "news", "timeframe": "week"}}]},
+      "metadata": {"what_it_tests": "Multi-turn: cập nhật chủ đề và giữ timeframe từ lượt trước."}
+    },
+    {
+      "id": "G22_M02_url_after_clarify",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Đọc bài này giúp tôi."},
+        {"role": "user", "content": "Link đây: https://ai.google.dev/gemini-api/docs"},
+        {"role": "user", "content": "Chỉ đọc đúng URL đó."}
+      ],
+      "failure_type": "missing_info",
+      "expect": {"tool_calls": [{"name": "fetch", "args": {"url": "https://ai.google.dev/gemini-api/docs"}}]},
+      "metadata": {"what_it_tests": "Multi-turn: sử dụng URL được bổ sung, không chuyển sang lookup."}
+    },
+    {
+      "id": "G22_M03_switch_social_to_timeline",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tìm bài đăng về OpenAI trên Twitter."},
+        {"role": "user", "content": "Không, tôi chỉ muốn bài của Sam Altman."},
+        {"role": "user", "content": "Lấy 4 bài mới nhất."}
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {"tool_calls": [{"name": "timeline", "args": {"screenname": "sama", "limit": 4}}]},
+      "metadata": {"what_it_tests": "Multi-turn: chuyển social_search sang timeline và map handle."}
+    },
+    {
+      "id": "G22_M04_cancel_request",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tìm tin AI hôm nay."},
+        {"role": "user", "content": "Khoan, đừng tìm nữa."},
+        {"role": "user", "content": "Chỉ xác nhận là bạn đã hiểu."}
+      ],
+      "failure_type": "unnecessary_tool",
+      "expect": {"no_tool": true},
+      "metadata": {"what_it_tests": "Multi-turn: yêu cầu hiện tại đã hủy nên không được gọi tool."}
+    },
+    {
+      "id": "G22_M05_confirm_send",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tôi muốn gửi nội dung 'Bản tin AI hôm nay' lên Telegram."},
+        {"role": "assistant", "content": "Bạn có xác nhận gửi nội dung này lên Telegram không?"},
+        {"role": "user", "content": "Có, tôi xác nhận gửi đúng nội dung đó."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "send", "args": {"text": "Bản tin AI hôm nay", "confirmed": true}}]},
+      "metadata": {"what_it_tests": "Multi-turn: chỉ gọi action tool sau xác nhận rõ ràng."}
+    }
+  ]
 }
