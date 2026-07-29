@@ -1,5 +1,15 @@
 # Day 04 Lab v2 — Research Agent Tool Eval
 
+## BẢNG PHÂN VAI & FILE ĐẢM NHẬN
+
+| Vai trò (Role) | File/Khu vực đảm nhận | Nhiệm vụ chính | Người đảm nhận |
+|:---|:---|:---|:---|
+| **Role 1: Prompt & Routing Lead** | `artifacts/system_prompt.md`, `artifacts/tools.yaml`, `artifacts/version_log.csv` | Setup provider, chạy baseline v0, đọc `observed_mismatch`/`failures`, đặt hypothesis và sửa prompt/tool declaration qua v1→v2→v3 | Cao Hữu Phúc |
+| **Role 2: Tool Engineer** | `tools/<tool_name>/` (TOOL.md + tool.py), `tools/__init__.py` | Viết tool mới (≥1, cố >3 nếu muốn bonus), đăng ký tool, đảm bảo tool trả lỗi có kiểm soát (không crash), smoke-test trực tiếp | Ngô Khánh Trượng |
+| **Role 3: Eval Designer** | `data/eval_group.json` | Thiết kế đúng 10 case (5 single-turn `query` + 5 multi-turn `turns`), phủ đủ 6 `failure_type`, điền `metadata.what_it_tests` | Nguyễn Thị Xuân Mai |
+| **Role 4: Core Developer / Integrator (UI)** | `app.py`, deploy | **Đầu mối kéo code cả nhóm (`git pull`)**, dựng UI (khuyến nghị Streamlit) tái dùng `run_model_tool_loop` trong `chat.py`, hiển thị trace/version, setup Cloudflare Tunnel | Trần Doãn Hưng |
+| **Role 5: Observability & Report** | `chat.py` transcripts, `artifacts/REPORT.md` | Chạy live chat 3 turn bắt buộc, soi run JSON/transcript, viết Report Phần A (trước 11:30) và Phần B (sau debate) | Lê Tuấn Hiệp |
+
 ## Brief
 
 Trong lab này, nhóm build một research agent nhỏ nhưng chạy thật. Agent nhận request của user, chọn tool, truyền arguments, chạy tool thật, lưu full JSON log, rồi dùng log đó để tối ưu prompt/tool declaration qua nhiều version.
